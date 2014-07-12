@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jdbc-ee="http://www.mulesoft.org/schema/mule/ee/jdbc" xmlns="http://www.mulesoft.org/schema/mule/core" version="EE-3.5.0"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/jdbc http://www.mulesoft.org/schema/mule/ee/jdbc/current/mule-jdbc-ee.xsd">
+	<spring:beans>
+		<spring:import resource="classpath:beans.xml" />
+	</spring:beans>
+    <jms:activemq-xa-connector name="activeMqConnector"
+                               dynamicNotification="true"
+                               specification="1.1"
+                               persistentDelivery="true"
+                               maxRedelivery="-1"
+                               numberOfConcurrentTransactedReceivers="2"
+                               connectionFactory-ref="amqConnectionFactory" doc:name="Active MQ">
+    </jms:activemq-xa-connector>
+    <jdbc-ee:connector name="dbConnector"
+    	dataSource-ref="dataSource" 
+    	dynamicNotification="true" 
+    	validateConnections="true" 
+    	queryTimeout="-1" 
+    	pollingFrequency="0" 
+    	doc:name="Database">
+    	<jdbc-ee:query key="insertData" value="INSERT INTO test_table (data) VALUES (#[payload])" />
+    </jdbc-ee:connector>
+	
+	<flow name="jmsToDbAndJms" doc:name="jmsToDbAndJms">
+		<description>
+			Monitors input queue, and transactionally sends messages to a database and an output queue.
+		</description>
+		<jms:inbound-endpoint queue="input" connector-ref="activeMqConnector" doc:name="JMS: input">
+			<xa-transaction action="ALWAYS_BEGIN" />
+		</jms:inbound-endpoint>
+		<set-property name="txidCapture" 
+			propertyName="txid" 
+			value="#[org.mule.transaction.TransactionCoordination.getInstance().getTransaction().getId()]" />
+		<logger level="INFO"
+			category="com.confluex.mule.test.bti-transaction-issue.jmsToDbAndJms"
+			message="Received message to dispatch: #[payload]"
+			doc:name="INFO"
+			/>
+		<all>
+			<jdbc-ee:outbound-endpoint name="databaseInsertEndpoint" connector-ref="dbConnector" queryKey="insertData">
+				<xa-transaction action="ALWAYS_JOIN" />
+			</jdbc-ee:outbound-endpoint>
+			<jms:outbound-endpoint queue="output" connector-ref="activeMqConnector" doc:name="JMS: output">
+				<xa-transaction action="ALWAYS_JOIN" />
+			</jms:outbound-endpoint>
+		</all>
+	</flow>
+</mule>
