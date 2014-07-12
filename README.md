@@ -4,6 +4,7 @@ mule-3.5-bti-issue
 Demonstrates a bug when using the Bitronix Transaction Manager with JMS.  Run BitronixTransactionManagerTest to see it fail.  Run JbossTaTransactionManagerTest to see the same flow succeed.
 
 The error I observed is:
+```
 	2014-07-11 20:34:53 ERROR [activeMqConnector.receiver.02] DefaultSystemExceptionStrategy:361 - Caught exception in Exception Strategy: null
 	java.lang.reflect.UndeclaredThrowableException
 		at com.sun.proxy.$Proxy19.receive(Unknown Source)
@@ -39,3 +40,4 @@ The error I observed is:
 		at java.lang.reflect.Method.invoke(Method.java:606)
 		at com.mulesoft.mule.bti.jms.BitronixMessageConsumerInvocationHandler.invoke(BitronixMessageConsumerInvocationHandler.java:40)
 		... 26 more
+```
