@@ -12,6 +12,10 @@ http://www.mulesoft.org/schema/mule/ee/jdbc http://www.mulesoft.org/schema/mule/
 	<spring:beans>
 		<spring:import resource="classpath:beans.xml" />
 	</spring:beans>
+	<notifications dynamic="true">
+		<notification event="ENDPOINT-MESSAGE" />
+		<notification event="TRANSACTION" />
+	</notifications>
     <jms:activemq-xa-connector name="activeMqConnector"
                                dynamicNotification="true"
                                specification="1.1"

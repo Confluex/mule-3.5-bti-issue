@@ -47,3 +47,5 @@ flows/
 target/
 **/*.mflow
 .mule/
+
+src/test/resources/muleLicenseKey.lic
